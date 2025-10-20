@@ -1,0 +1,178 @@
+Task 1: Scan Your Local Network for Open Ports.\
+
+Objective: Learn to discover open ports on devices in your local network to understand network exposure.
+
+Tools: Nmap 
+
+Nmap scan report for 192.168.56.1
+Host is up (0.0012s latency).
+Not shown: 996 closed tcp ports (reset)
+PORT     STATE SERVICE
+135/tcp  open  msrpc
+139/tcp  open  netbios-ssn
+445/tcp  open  microsoft-ds
+3306/tcp open  mysql
+
+
+
+1) Quick summary 
+
+192.168.56.1 — open: 135 (MSRPC), 139 (NetBIOS-SSN), 445 (SMB), 3306 (MySQL).
+
+2) Common services running on those ports :
+
+135 — MSRPC (Microsoft RPC endpoint mapper)
+
+Used by Windows Remote Procedure Call services and DCOM. It helps clients discover RPC services/ports on the host (e.g., remote administration, management APIs, some SMB/print services).
+
+139 — NetBIOS Session Service (NetBIOS-SSN)
+
+Legacy Windows networking (NetBIOS over TCP). Supports SMB over NetBIOS, name resolution and older Windows file/share access.
+
+445 — Microsoft-DS / SMB (Server Message Block)
+
+Modern Windows file sharing, networked printers, remote administration, Windows domain services, and many network file operations. SMBv1/v2/v3 vary by version.
+
+3306 — MySQL / MariaDB
+
+MySQL database server listening for client connections. If exposed, remote clients (or attackers) may attempt to authenticate, query, or exploit the DB.
+
+3) Security risks per port (practical, prioritized)
+
+I’ll list the most likely/important risks first and give severity guidance.
+
+135 — MSRPC
+
+Risks
+
+RPC exposes many Windows management endpoints; historically exploited to gain info or execute remote code (attack surface for wormable exploits when combined with vulnerable services).
+
+Can be abused for enumeration (user, service, OS info) and lateral-movement techniques.
+
+Severity: Medium–High depending on exposed RPC services & patch level.
+
+Why to care: RPC often enables higher-level attacks (SMB, service control) and is noisy to security tooling.
+
+139 & 445 — NetBIOS / SMB
+
+Risks
+
+Ransomware propagation & wormable exploits (e.g., EternalBlue targeted SMB on 445).
+
+Unauthorized file-share access — exposed shares may leak sensitive files if permissions are weak.
+
+SMBv1 (if enabled) is insecure and should be disabled — it’s a frequent exploit vector.
+
+Null-session & enumeration — attackers can enumerate users/shares and attempt brute force or exploit service flaws.
+
+Severity: High (SMB exposure on a LAN/WAN is one of the highest-risk items).
+
+Why to care: SMB is a frequent initial access / lateral movement vector and often leads to full system compromise or data exfiltration.
+
+3306 — MySQL
+
+Risks
+
+Weak or default credentials — remote access with default/weak passwords leads to DB compromise.
+
+Unpatched MySQL versions may have remote code execution or privilege escalation CVEs.
+
+Data leakage — databases often contain sensitive user/customer data.
+
+Exposure to brute force or SQL injection via management interfaces (if web apps connect insecurely).
+
+Severity: Medium–High, depending on authentication, encryption, and whether the DB should be reachable over the network at all.
+
+Why to care: A compromised DB can expose sensitive data and serve as pivot point.
+
+4) Immediate prioritized actions :
+
+If you don’t need these services exposed on the network, block them immediately
+
+On the host: enable/adjust local firewall. On a Linux host: ufw deny from any to any port 445 (example). On Windows: Block inbound TCP 135,139,445,3306 in Windows Defender Firewall (Domain/Private/Public as appropriate).
+
+On the router: block inbound to that host’s IP for those ports if not needed.
+
+Patch & update
+
+Ensure OS and MySQL are fully patched. Many SMB/RPC issues are fixed by vendor patches — patch first.
+
+Harden SMB / RPC
+
+Disable SMBv1 (if present). On Windows: remove the SMBv1 feature or disable via registry/GPO. SMBv2/3 are preferred.
+
+Limit SMB access to specific management IPs or a management VLAN — do not expose to guest or IoT networks.
+
+Disable unnecessary RPC services or restrict RPC endpoints with Windows Firewall/GPO where possible.
+
+Harden MySQL
+
+Edit MySQL config (my.cnf / my.ini) and bind MySQL to localhost if remote DB access is not required:
+
+bind-address = 127.0.0.1
+
+
+Or restrict to specific internal IPs if remote app servers need access.
+
+Ensure strong passwords for all DB users and remove anonymous users.
+
+Disable remote root login: UPDATE mysql.user SET Host='localhost' WHERE User='root'; (then FLUSH PRIVILEGES;) — follow best-practice commands for your distribution/version.
+
+Use TLS for DB connections if remote connections are needed.
+
+Audit shares and permissions
+
+Check SMB shares and NTFS permissions; remove or tighten shares that expose sensitive folders.
+
+On Windows: review Computer Management > Shared Folders or Get-SmbShare in PowerShell.
+
+Inventory & segmentation
+
+Move services that must be network-accessible onto restricted subnets or a management VLAN. Put IoT devices and untrusted endpoints on separate networks.
+
+Monitor & log
+
+Enable logging for SMB and MySQL. Use IDS/IPS signatures for SMB attacks and log failed auth attempts to detect brute force.
+
+Re-scan after remediations to confirm ports are closed/filtered.
+
+5) Useful commands / checks (quick copy-paste)
+
+Save a deeper nmap and enumerate SMB/MySQL (Windows PowerShell):
+
+nmap -sS -sV -Pn -p 135,139,445,3306 --script=smb-os-discovery,smb-enum-shares,smb-security-mode,mysql-info -oA scan-192.168.56.1 192.168.56.1
+
+
+Check if MySQL accepts remote connections (PowerShell):
+
+Test-NetConnection -ComputerName 192.168.56.1 -Port 3306
+
+
+List SMB shares from a Windows client:
+
+net view \\192.168.56.1
+# or (may require admin rights)
+Get-SmbShare -CimSession 192.168.56.1
+
+
+Quick check for SMBv1 (Windows target): Look in Windows Features or run PowerShell on target:
+
+Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol
+
+6) Remediation checklist:
+
+ Block 135, 139, 445, 3306 from networks that don’t need them (host firewall + router).
+
+ Patch OS and MySQL.
+
+ Disable SMBv1.
+
+ Bind MySQL to 127.0.0.1 or internal-only IP; require strong credentials.
+
+ Audit SMB shares & permissions; remove unnecessary shares.
+
+ Enable logging/monitoring and schedule recurring scans.
+
+ Segment network (management VLAN for admin services).
+
+ If remote admin is needed, use VPN + restrict to management IPs (don’t leave services wide-open).
