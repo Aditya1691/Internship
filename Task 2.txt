@@ -30,8 +30,7 @@ Microsoft Security Team
 Attachment: security_notice.pdf (unexpected)
 
 Note: this example is adapted from publicly-available phishing examples for training purposes. Real phishing emails vary but commonly use the same tactics. 
-hooksecurity.co
-+1
+
 
 2) Examine sender's email address for spoofing
 
@@ -44,7 +43,7 @@ Actual address support@microsoft-secure.com — not an official Microsoft domain
 Subtle domain tricks: microsoft-secure.com or micr0soft.com are common deceptive domains.
 
 Verdict: Suspicious / likely spoofed. Attackers control lookalike domains to make the display name appear genuine. Proofpoint explains email spoofing and how attackers forge the From field. 
-Proofpoint
+
 
 3) Check email headers for discrepancies (use an online header analyzer)
 
@@ -118,7 +117,6 @@ How to inspect: hover (desktop) or long-press (mobile) to reveal the actual URL.
 Link text might read https://account.microsoft.com but hover reveals https://microsoft.verify-account.online/secure-login — mismatch.
 
 If the domain under the cursor is not the official vendor domain (or is an IP address or a URL shortener), do not click. Modern phishing pages will often use HTTPS (padlock) — padlock alone is not a guarantee of legitimacy. Fortinet and others warn HTTPS can be abused by phishers. 
-Fortinet
 
 7) Verify presence of spelling or grammar errors
 
@@ -129,7 +127,7 @@ Slightly odd phrasing (“we detected suspicious activity… For your protection
 Many real phishings contain grammatical mistakes, wrong capitalization, or poor punctuation; but sophisticated phishers may have near-perfect grammar.
 
 Verdict: Possible indicator (presence raises suspicion; absence does not mean safe). Training examples highlight spelling/grammar as useful signals. 
-Norton
+
 
 8) Summary of phishing traits found (concise list)
 
@@ -148,6 +146,7 @@ Unexpected attachment (PDF) — unsolicited attachments commonly carry malware.
 
 
 Potential spelling/grammar oddities — minor but useful when combined with other red flags. 
+
 
 
 Overall assessment: This email is almost certainly a phishing attempt. Do not click links, do not open attachments, and do not reply.
