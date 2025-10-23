@@ -1,0 +1,153 @@
+Task 2: Analyze a Phishing Email Sample.
+
+Objective: Identify phishing characteristics in a suspicious email sample.
+
+Tools: Email client or saved email file (text), free online header analyzer.
+
+1) Sample phishing email :
+
+From (display name): Microsoft Account Team
+From (actual address shown): support@microsoft-secure.com
+
+To: aditya.sah@college.edu
+
+Subject: Urgent: Verify your Microsoft account within 24 hours or it will be suspended
+Date: Tue, 21 Oct 2025 09:12:03 +0530
+
+Body (excerpt):
+
+Dear Aditya Sah,
+
+We detected suspicious activity on your Microsoft account. For your protection, you must verify your identity or your account will be suspended within 24 hours. Click the link below to verify immediately:
+
+Verify Now — https://microsoft.verify-account[.]online/secure-login
+
+If you do not verify, access to your OneDrive and Outlook will be restricted.
+
+Regards,
+Microsoft Security Team
+
+Attachment: security_notice.pdf (unexpected)
+
+Note: this example is adapted from publicly-available phishing examples for training purposes. Real phishing emails vary but commonly use the same tactics. 
+hooksecurity.co
++1
+
+2) Examine sender's email address for spoofing
+
+What to look for:
+
+Display name “Microsoft Account Team” — legitimate-looking (easy to spoof).
+
+Actual address support@microsoft-secure.com — not an official Microsoft domain. Official Microsoft mail comes from microsoft.com, office.com, microsoftonline.com, etc.
+
+Subtle domain tricks: microsoft-secure.com or micr0soft.com are common deceptive domains.
+
+Verdict: Suspicious / likely spoofed. Attackers control lookalike domains to make the display name appear genuine. Proofpoint explains email spoofing and how attackers forge the From field. 
+Proofpoint
+
+3) Check email headers for discrepancies (use an online header analyzer)
+
+How to do it:
+
+Open the email in your client and view Full original / Show source (Gmail: “Show original”).
+
+Copy the full headers (the top part that starts with Received: etc).
+
+Paste into a header analyzer such as MXToolbox Email Header Analyzer, Message Header Analyzer (Microsoft/Google tools), or EasyDMARC / MHA. These parse Received hops, show SPF/DKIM/DMARC results, and highlight anomalies. 
+
+
+Example things an analyzer will reveal (typical malicious signs):
+
+SPF = fail or spf=softfail for the sending IP vs the domain in the From header.
+
+DKIM = fail or missing DKIM-Signature.
+
+DMARC = fail (no alignment between From domain and authenticated domain).
+
+Received chain showing originating IP that doesn’t belong to Microsoft (e.g., a VPS host in another country).
+
+Received: lines out of expected order or hops from suspicious mail relays.
+
+Sample header snippet (illustrative):
+
+Received: from mail.attacker-host.com (192.0.2.45) by mx-college.edu ...
+Received: from attacker.example.com (unknown)
+Authentication-Results: mx-college.edu;
+   spf=fail (sender IP not authorized) smtp.mailfrom=microsoft-secure.com;
+   dkim=none;
+   dmarc=fail header.from=microsoft-secure.com
+
+
+If you see spf=fail / dkim=none / dmarc=fail while the From domain is a high-value brand, treat it as highly suspicious. Tools and guides show how to interpret these lines. 
+
+
+4) Identify suspicious links or attachments
+
+From the sample:
+
+Link visible in the email: https://microsoft.verify-account.online/secure-login — domain verify-account.online (not microsoft.com). Attackers often use subdomains or lookalike TLDs: microsoft.verify-account.online may look convincing but is not controlled by Microsoft.
+
+Attachment security_notice.pdf is unexpected and could be malware or a credential harvester.
+
+Checks you should perform (safe non-clicking methods):
+
+Hover the link with mouse (don't click) — client shows the real destination (see step 6).
+
+Copy the link (without opening) into a text editor to inspect the host.
+
+Use a safe URL checker (VirusTotal, URLScan, Google Safe Browsing) to scan the URL instead of visiting it.
+
+Finding: Link and attachment are suspicious — they point to non-official domains and include an unsolicited PDF. Public examples show phishing emails often contain such links/attachments. 
+
+5) Look for urgent or threatening language in the email body
+
+Observed in the sample:
+
+Phrases: “Urgent”, “within 24 hours”, “will be suspended”, “for your protection” — create fear and a rush to act.
+
+Threat/immediacy is a classic social-engineering trigger used to bypass rational checks.
+
+Verdict: High-risk indicator. Multiple training sites note urgency and threats as primary phishing traits. 
+
+
+6) Note any mismatched URLs (hover to see real link)
+
+How to inspect: hover (desktop) or long-press (mobile) to reveal the actual URL. In our sample:
+
+Link text might read https://account.microsoft.com but hover reveals https://microsoft.verify-account.online/secure-login — mismatch.
+
+If the domain under the cursor is not the official vendor domain (or is an IP address or a URL shortener), do not click. Modern phishing pages will often use HTTPS (padlock) — padlock alone is not a guarantee of legitimacy. Fortinet and others warn HTTPS can be abused by phishers. 
+Fortinet
+
+7) Verify presence of spelling or grammar errors
+
+In the sample:
+
+Slightly odd phrasing (“we detected suspicious activity… For your protection, you must verify your identity or your account will be suspended”) — may be clumsy but not always obviously broken.
+
+Many real phishings contain grammatical mistakes, wrong capitalization, or poor punctuation; but sophisticated phishers may have near-perfect grammar.
+
+Verdict: Possible indicator (presence raises suspicion; absence does not mean safe). Training examples highlight spelling/grammar as useful signals. 
+Norton
+
+8) Summary of phishing traits found (concise list)
+
+Spoofed sender/display name (display looks like Microsoft but domain is microsoft-secure.com) — mismatch between brand and actual sending domain. 
+Proofpoint
+
+Authentication fails likely in headers (SPF/DKIM/DMARC failing or misaligned) — header analyzers reveal these; a red flag for spoofing. 
+
+Urgent/threatening language (“24 hours”, “will be suspended”) to force quick action. 
+
+
+Suspicious link domain (verify-account.online vs official microsoft.com) and probable URL mismatch on hover. 
+
+
+Unexpected attachment (PDF) — unsolicited attachments commonly carry malware. 
+
+
+Potential spelling/grammar oddities — minor but useful when combined with other red flags. 
+
+
+Overall assessment: This email is almost certainly a phishing attempt. Do not click links, do not open attachments, and do not reply.
